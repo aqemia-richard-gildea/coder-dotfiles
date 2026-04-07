@@ -125,4 +125,32 @@ BASHRC
 
 fi
 
+# --- Install tools via mise ---
+if command -v mise &>/dev/null; then
+  echo "Installing mise tools..."
+  mise use --global zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest
+fi
+
+# --- LazyVim setup ---
+if [ ! -f "$HOME/.config/nvim/lazyvim.json" ]; then
+  echo "Installing LazyVim..."
+  # Back up any existing nvim config
+  [ -d "$HOME/.config/nvim" ] && mv "$HOME/.config/nvim" "$HOME/.config/nvim.bak.$(date +%s)"
+  git clone --depth=1 https://github.com/LazyVim/starter "$HOME/.config/nvim"
+  # Remove .git so the user can track their own changes
+  rm -rf "$HOME/.config/nvim/.git"
+fi
+
+# --- Symlink personal nvim overrides if present ---
+if [ -d "$DOTFILES_DIR/.config/nvim" ]; then
+  # Overlay dotfiles nvim config on top of LazyVim starter
+  cp -r "$DOTFILES_DIR/.config/nvim/." "$HOME/.config/nvim/"
+fi
+
+# --- Zellij config ---
+if [ -d "$DOTFILES_DIR/.config/zellij" ]; then
+  mkdir -p "$HOME/.config/zellij"
+  ln -sf "$DOTFILES_DIR/.config/zellij/config.kdl" "$HOME/.config/zellij/config.kdl" 2>/dev/null || true
+fi
+
 echo "Dotfiles installed successfully."

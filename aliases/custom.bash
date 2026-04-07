@@ -1,4 +1,10 @@
-alias ll='ls -alF'
+# eza (modern ls)
+alias ls='eza'
+alias ll='eza -alF --git'
+alias tree='eza --tree'
+
+# bat (modern cat)
+alias cat='bat --paging=never'
 alias rm='rm -i'
 alias mv='mv -i'
 alias cp='cp -iv'
