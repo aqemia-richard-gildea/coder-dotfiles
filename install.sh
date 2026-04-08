@@ -128,7 +128,7 @@ fi
 # --- Install tools via mise ---
 if command -v mise &>/dev/null; then
   echo "Installing mise tools..."
-  mise use --global zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest
+  mise use --global neovim@stable zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest
 fi
 
 # --- LazyVim setup ---

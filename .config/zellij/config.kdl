@@ -1,3 +1,7 @@
 // Zellij personal config
 // This file is symlinked into ~/.config/zellij/ by install.sh
 // See https://zellij.dev/documentation/configuration for options
+
+// Persist session layout across workspace restarts
+session_serialization true
+serialization_interval 300
