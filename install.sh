@@ -30,6 +30,7 @@ command -v starship &>/dev/null && eval "\$(starship init zsh)"
 command -v zoxide &>/dev/null && eval "\$(zoxide init --cmd cd zsh)"
 
 # History
+export HISTFILE="\$HOME/.zsh_history"
 export HISTSIZE=2000000
 export SAVEHIST=2000000
 setopt HIST_IGNORE_ALL_DUPS SHARE_HISTORY
