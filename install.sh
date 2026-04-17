@@ -153,4 +153,8 @@ if [ -d "$DOTFILES_DIR/.config/zellij" ]; then
   ln -sf "$DOTFILES_DIR/.config/zellij/config.kdl" "$HOME/.config/zellij/config.kdl" 2>/dev/null || true
 fi
 
+# --- Install / update Claude Code CLI ---
+echo "Installing latest Claude Code CLI..."
+curl -fsSL https://claude.ai/install.sh | bash
+
 echo "Dotfiles installed successfully."
