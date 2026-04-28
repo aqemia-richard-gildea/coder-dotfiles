@@ -48,6 +48,14 @@ source "$DOTFILES_DIR/aliases/custom.bash"
 # Terraform cache
 export TF_PLUGIN_CACHE_DIR=\$HOME/.terraform.d/plugin-cache
 export TG_PROVIDER_CACHE=true
+
+# Auto-attach to a stable zellij session so layout/panes resurrect across
+# coder workspace restarts. Skip when already inside zellij (\$ZELLIJ is set
+# to "0" in inner panes), in non-interactive shells, or in VS Code's
+# integrated terminal.
+if [ -z "\$ZELLIJ" ] && [ -t 1 ] && [ "\$TERM_PROGRAM" != "vscode" ] && command -v zellij >/dev/null; then
+  exec zellij attach --create main
+fi
 ZSHRC
   fi
 
