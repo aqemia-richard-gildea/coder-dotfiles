@@ -137,7 +137,7 @@ fi
 # --- Install tools via mise ---
 if command -v mise &>/dev/null; then
   echo "Installing mise tools..."
-  mise use --global neovim@stable zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest
+  mise use --global neovim@stable zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest jq@latest
 fi
 
 # --- LazyVim setup ---
@@ -158,8 +158,11 @@ fi
 
 # --- Zellij config ---
 if [ -d "$DOTFILES_DIR/.config/zellij" ]; then
-  mkdir -p "$HOME/.config/zellij"
+  mkdir -p "$HOME/.config/zellij/layouts"
   ln -sf "$DOTFILES_DIR/.config/zellij/config.kdl" "$HOME/.config/zellij/config.kdl" 2>/dev/null || true
+  # default.kdl is the layout zellij applies to every new session; it sets the
+  # zellaude top bar (Claude Code activity awareness). Requires jq at runtime.
+  ln -sf "$DOTFILES_DIR/.config/zellij/layouts/default.kdl" "$HOME/.config/zellij/layouts/default.kdl" 2>/dev/null || true
 fi
 
 # --- Install / update Claude Code CLI ---

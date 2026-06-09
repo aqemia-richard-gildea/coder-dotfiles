@@ -1,0 +1,18 @@
+// Default zellij layout
+// This file is symlinked into ~/.config/zellij/layouts/ by install.sh
+// Naming it default.kdl makes zellij apply it to every new session.
+//
+// The top bar uses zellaude (https://github.com/ishefi/zellaude) instead of
+// the stock zellij:tab-bar — it shows Claude Code session activity alongside
+// the normal tabs. The bottom zellij:status-bar is kept for mode/keybinding hints.
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="https://github.com/ishefi/zellaude/releases/latest/download/zellaude.wasm"
+        }
+        children
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+}
