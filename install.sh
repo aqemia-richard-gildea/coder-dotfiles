@@ -53,8 +53,11 @@ export TG_PROVIDER_CACHE=true
 # coder workspace restarts. Skip when already inside zellij (\$ZELLIJ is set
 # to "0" in inner panes), in non-interactive shells, or in VS Code's
 # integrated terminal.
+#
+# No \`exec\`: keep a real shell behind zellij so detaching (Ctrl+o d) or
+# quitting returns to a prompt instead of closing the coder terminal.
 if [ -z "\$ZELLIJ" ] && [ -t 1 ] && [ "\$TERM_PROGRAM" != "vscode" ] && command -v zellij >/dev/null; then
-  exec zellij attach --create main
+  zellij attach --create main
 fi
 ZSHRC
   fi
