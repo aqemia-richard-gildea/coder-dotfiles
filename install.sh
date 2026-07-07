@@ -143,6 +143,31 @@ if command -v mise &>/dev/null; then
   mise use --global neovim@stable zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest jq@latest
 fi
 
+# --- Install mosh-server (conda-forge) ---
+# mosh isn't in the mise registry and apt-get needs root (no passwordless sudo
+# in this container), so we install the conda-forge build into an isolated
+# prefix. mosh-server is a standalone C++ binary; its conda RPATH
+# ($ORIGIN/../lib) lets it run correctly from its own bin dir.
+MOSH_PREFIX="$HOME/.local/mosh"
+CONDA_BIN="$(command -v conda || echo /opt/conda/bin/conda)"
+if [ ! -x "$MOSH_PREFIX/bin/mosh-server" ] && [ -x "$CONDA_BIN" ]; then
+  echo "Installing mosh-server via conda..."
+  "$CONDA_BIN" create -y -p "$MOSH_PREFIX" -c conda-forge mosh
+fi
+
+# Put mosh-server on PATH for NON-interactive ssh sessions. The mosh client runs
+# `mosh-server` through a remote shell whose PATH comes from /etc/environment
+# (no conda, no ~/.local/bin), so login-shell PATH tweaks don't apply. bash
+# started by sshd reads ~/.bashrc; zsh reads ~/.zshenv for every invocation —
+# cover both, idempotently.
+if [ -x "$MOSH_PREFIX/bin/mosh-server" ]; then
+  for rc in "$HOME/.bashrc" "$HOME/.zshenv"; do
+    if ! grep -q 'AQEMIA_MOSH_PATH' "$rc" 2>/dev/null; then
+      printf '\n# AQEMIA_MOSH_PATH\nexport PATH="%s/bin:$PATH"\n' "$MOSH_PREFIX" >> "$rc"
+    fi
+  done
+fi
+
 # --- LazyVim setup ---
 if [ ! -f "$HOME/.config/nvim/lazyvim.json" ]; then
   echo "Installing LazyVim..."
