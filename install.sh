@@ -143,6 +143,36 @@ if command -v mise &>/dev/null; then
   mise use --global neovim@stable zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest jq@latest
 fi
 
+# --- Ensure UTF-8 locales are resolvable (needed by mosh-server) ---
+# mosh forwards the client's LANG (e.g. en_GB.UTF-8), but the image ships only
+# C.UTF-8 / en_US.UTF-8 and locale-gen needs root. Compile the locales we use
+# into ~/.locale (no root) and point LOCPATH at it. We also compile en_US.UTF-8
+# because setting LOCPATH stops glibc consulting the system locale-archive, so
+# any archive-only locale would otherwise fall back to ASCII.
+LOCALE_DIR="$HOME/.locale"
+if command -v localedef &>/dev/null; then
+  for loc in en_GB en_US; do
+    if [ ! -d "$LOCALE_DIR/${loc}.UTF-8" ] && [ -f "/usr/share/i18n/locales/${loc}" ]; then
+      echo "Compiling ${loc}.UTF-8 locale into $LOCALE_DIR..."
+      mkdir -p "$LOCALE_DIR"
+      localedef -i "$loc" -f UTF-8 "$LOCALE_DIR/${loc}.UTF-8" || true
+    fi
+  done
+fi
+if [ -d "$LOCALE_DIR/en_GB.UTF-8" ]; then
+  for rc in "$HOME/.bashrc" "$HOME/.zshenv"; do
+    if ! grep -q 'AQEMIA_LOCALE' "$rc" 2>/dev/null; then
+      cat >> "$rc" <<'LOCALE'
+
+# AQEMIA_LOCALE - resolve the home-compiled UTF-8 locales (mosh-server and
+# setlocale need a UTF-8 native locale; the image lacks en_GB.UTF-8).
+export LOCPATH="$HOME/.locale"
+export LANG="en_GB.UTF-8"
+LOCALE
+    fi
+  done
+fi
+
 # --- Install mosh-server (conda-forge) ---
 # mosh isn't in the mise registry and apt-get needs root (no passwordless sudo
 # in this container), so we install the conda-forge build into an isolated
