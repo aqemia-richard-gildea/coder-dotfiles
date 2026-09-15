@@ -141,6 +141,12 @@ fi
 if command -v mise &>/dev/null; then
   echo "Installing mise tools..."
   mise use --global neovim@stable zellij@latest fzf@latest fd@latest lazygit@latest delta@latest bat@latest eza@latest jq@latest
+
+  # leaf (terminal markdown previewer) isn't in the mise registry, so pull it
+  # straight from its GitHub releases. The github: backend verifies the release's
+  # artifact attestations and SLSA provenance before installing; the older ubi:
+  # backend used elsewhere in this config is deprecated from mise 2027.1.0.
+  mise use --global github:RivoLink/leaf@latest
 fi
 
 # --- Ensure UTF-8 locales are resolvable (needed by mosh-server) ---
