@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# claude-zellij: run Claude Code so that a restored Zellij pane resumes the
+# conversation it had before the session died.
+#
+# How it works:
+#   - Zellij saves each pane's command line and runs it again when it restores
+#     a session. On first run this script re-runs itself with
+#     "--zellij-marker <uuid>" added, so the saved command names the pane.
+#   - claude gets a SessionStart hook (claude-zellij-hook) through --settings.
+#     Claude Code runs it on startup, /resume, /clear and compaction, and the
+#     hook writes the current session ID and transcript path to a state file
+#     for the pane.
+#   - When Zellij runs the saved command again, this script reads the state
+#     file and starts "claude --resume <session-id>".
+#
+# Flags are passed to claude on every launch, including resumes.
+set -euo pipefail
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/claude-zellij"
+hook="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/claude-zellij-hook"
+uuid_re='^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+
+# Absolute path of this script as called. Symlinks are kept, so the saved
+# command uses ~/.local/bin/claude-zellij and not the repo path behind it.
+self="${BASH_SOURCE[0]}"
+[[ -f "$self" ]] || self="$(command -v -- "$self")"
+self="$(realpath -s -- "$self")"
+
+have_jq=true
+command -v jq >/dev/null 2>&1 || have_jq=false
+
+if [[ "${1:-}" != --zellij-marker ]]; then
+    # Only plain interactive sessions are tracked. A subcommand or a prompt
+    # (first argument without a leading "-") goes straight to claude, and so
+    # do flags that pick a session, do not stay interactive in this pane, or
+    # would replace the wrapper's --settings.
+    if [[ -n "${1:-}" && "$1" != -* ]]; then
+        exec claude "$@"
+    fi
+    for arg in "$@"; do
+        case "$arg" in
+            -p|--print|-c|--continue|-r|--resume|--resume=*|--session-id|--session-id=*|\
+            --from-pr|--from-pr=*|--teleport|--teleport=*|--bg|--background|--cloud|--desktop|\
+            -w|--worktree|--worktree=*|--settings|--settings=*|--bare|-h|--help|-v|--version)
+                exec claude "$@" ;;
+        esac
+    done
+    if ! $have_jq; then
+        echo "claude-zellij: jq not found; starting claude without pane tracking" >&2
+        exec claude "$@"
+    fi
+    exec "$self" --zellij-marker "$(cat /proc/sys/kernel/random/uuid)" "$@"
+fi
+
+marker="${2:-}"
+if [[ ! "$marker" =~ $uuid_re ]]; then
+    echo "claude-zellij: --zellij-marker needs a UUID, got '$marker'" >&2
+    exit 2
+fi
+shift 2
+mkdir -p "$state_dir"
+state="$state_dir/$marker"
+
+cmd=(claude)
+if $have_jq; then
+    settings="$(jq -nc --arg command "$(printf '%q' "$hook")" \
+        '{hooks: {SessionStart: [{hooks: [{type: "command", command: $command}]}]}}')"
+    cmd+=(--settings "$settings")
+else
+    echo "claude-zellij: jq not found; session changes in this pane are not recorded" >&2
+fi
+
+if [[ -f "$state" ]]; then
+    session_id="" transcript=""
+    IFS=$'\t' read -r session_id transcript < "$state" || true
+    if [[ "$session_id" =~ $uuid_re && -f "$transcript" ]]; then
+        cmd+=(--resume "$session_id")
+    else
+        # A session that never received a message has no transcript.
+        echo "claude-zellij: session ${session_id:-?} has no transcript; starting a new session" >&2
+    fi
+fi
+
+# Delete state files older than 60 days whose transcript is gone. A pane that
+# is still running keeps its file: its transcript exists and keeps changing.
+while IFS= read -r -d '' old; do
+    old_transcript=""
+    IFS=$'\t' read -r _ old_transcript < "$old" || true
+    [[ -f "$old_transcript" ]] || rm -f -- "$old"
+done < <(find "$state_dir" -type f -mtime +60 -print0 2>/dev/null)
+
+# Run claude as a child process, not with exec. Zellij saves the command of the
+# pane's top process, and that must stay this script with its marker.
+export CLAUDE_ZELLIJ_STATE="$state"
+"${cmd[@]}" "$@"

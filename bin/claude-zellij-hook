@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Claude Code SessionStart hook used by claude-zellij. Writes the current
+# session ID and transcript path (tab-separated) to $CLAUDE_ZELLIJ_STATE.
+# It always exits 0 so that it can never block a session from starting.
+[[ -n "${CLAUDE_ZELLIJ_STATE:-}" ]] || exit 0
+tmp="$CLAUDE_ZELLIJ_STATE.tmp.$$"
+if jq -er 'select(.session_id != null and .transcript_path != null)
+           | [.session_id, .transcript_path] | @tsv' > "$tmp" 2>/dev/null; then
+    mv -f "$tmp" "$CLAUDE_ZELLIJ_STATE"
+else
+    rm -f "$tmp"
+fi
+exit 0

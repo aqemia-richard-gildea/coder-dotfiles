@@ -229,6 +229,12 @@ if [ -d "$DOTFILES_DIR/.config/zellij" ]; then
   ln -sf "$DOTFILES_DIR/.config/zellij/layouts/default.kdl" "$HOME/.config/zellij/layouts/default.kdl" 2>/dev/null || true
 fi
 
+# --- claude-zellij -> ~/.local/bin ---
+# Wrapper that makes a restored zellij pane resume its Claude Code conversation.
+# It finds claude-zellij-hook through its own resolved path, so only it is linked.
+mkdir -p "$HOME/.local/bin"
+ln -sf "$DOTFILES_DIR/bin/claude-zellij" "$HOME/.local/bin/claude-zellij"
+
 # --- Install / update Claude Code CLI ---
 echo "Installing latest Claude Code CLI..."
 curl -fsSL https://claude.ai/install.sh | bash

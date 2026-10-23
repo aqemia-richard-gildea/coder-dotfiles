@@ -21,6 +21,9 @@ alias kgn='kubectl get nodes'
 alias kns='kubens'
 alias kctx='kubectx'
 
+# Inside zellij, track the pane's conversation so session restore resumes it
+[ -n "$ZELLIJ" ] && command -v claude-zellij >/dev/null && alias claude='claude-zellij'
+
 # python / uv
 alias py='python3'
 alias uvr='uv run'
